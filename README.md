@@ -18,8 +18,6 @@ AIHUB - https://www.aihub.or.kr/aihubdata/data/view.do?currMenu=115&topMenu=100&
 
 ## Install
 
-프로젝트를 설치하는 방법을 여기에 작성합니다. 예를 들어, 필요한 의존성 패키지와 설치 절차를 명시합니다.
-
 1. Datasets Downloads
 
 2. package install
