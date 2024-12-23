@@ -18,22 +18,36 @@ AIHUB - https://www.aihub.or.kr/aihubdata/data/view.do?currMenu=115&topMenu=100&
 
 ## Install
 
-1. Datasets Downloads
+1. #### Datasets Downloads
 
-2. package install
-```bash
+2. #### package install
+```commandline
 pip install -r requirements.txt
 ```
 
-3. data processing
-```bash
+3. #### data processing
+```commandline
 python processing.py
-
-# train_B.csv, valid_B.csv
+## train_B.csv, valid_B.csv
 ```
 
 ## Start
 
-```bash
+```commandline
 python train.py
+```
+
+4. #### torch to onnx
+```commandline
+python torch_to_onnx.py
+```
+
+5. #### onnx to tflite
+```commandline
+onnx2tf -i dogs14.onnx
+```
+
+6. #### metadata add
+```commandline
+python tflite_metadata_multilabel.py
 ```

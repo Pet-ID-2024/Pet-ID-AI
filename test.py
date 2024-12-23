@@ -29,37 +29,46 @@ def validate(model, dataloader, logger, iteration, device, checkpoint=None):
         accuracy_breed = 0
         accuracy_hair = 0
         loss_weight = 0
+        accuracy_color = 0
 
         for batch in dataloader:
             img = batch['img']
             target_labels = batch['labels']
             # target_labels['weight_labels'] = target_labels['weight_labels'].clone().detach().view(-1, 1)
             target_labels = {t: target_labels[t].to(device) for t in target_labels}
+            target_labels['weight_labels'] = target_labels['weight_labels'].clone().detach().view(-1, 1).to(
+                device).float()
             output = model(img.to(device))
 
-            val_train, val_train_losses = model.get_loss(output, target_labels)
+            val_train, val_train_losses, val_train_loss_list = model.get_loss(output, target_labels)            
             avg_loss += val_train.item()
-            batch_accuracy_breed, batch_accuracy_hair, batch_loss_weight = \
+
+            weight_loss = val_train_losses['weight'].cpu().detach()
+
+            batch_accuracy_breed, batch_accuracy_hair, batch_loss_weight, batch_accuracy_color = \
                 calculate_metrics(output, target_labels)
 
             accuracy_breed += batch_accuracy_breed
             accuracy_hair += batch_accuracy_hair
-            loss_weight += batch_loss_weight
+            loss_weight += weight_loss
+            accuracy_color += batch_accuracy_color
 
     n_samples = len(dataloader)
     avg_loss /= n_samples
     accuracy_breed /= n_samples
     accuracy_hair /= n_samples
     loss_weight /= n_samples
+    accuracy_color /= n_samples
 
     print('-' * 72)
-    print("Validation  loss: {:.4f}, breed: {:.4f}, hair: {:.4f}, weight: {:.4f}\n".format(
-        avg_loss, accuracy_breed, accuracy_hair, loss_weight))
+    print("Validation  loss: {:.4f}, breed: {:.4f}, hair: {:.4f}, weight: {:.4f}, color: {:.4f}\n".format(
+        avg_loss, accuracy_breed, accuracy_hair, loss_weight, accuracy_color))
 
     logger.add_scalar('val_loss', avg_loss, iteration)
     logger.add_scalar('val_accuracy_breed', accuracy_breed, iteration)
     logger.add_scalar('val_accuracy_hair', accuracy_hair, iteration)
     logger.add_scalar('val_loss_weight', loss_weight, iteration)
+    logger.add_scalar('val_accuracy_color', accuracy_color, iteration)
     model.train()
 
 
@@ -185,22 +194,34 @@ def visualize_grid(model, dataloader, attributes, device, show_cn_matrices=True,
 
 
 def calculate_metrics(output, target):
+    # print(output['breed'])
     _, predicted_breed = output['breed'].cpu().max(1)
     gt_breed = target['breed_labels'].cpu()
 
     _, predicted_hair = output['hair'].cpu().max(1)
     gt_hair = target['hair_labels'].cpu()
 
-    # _, predicted_weight = output['weight'].cpu().max(1)
-    # gt_weight = target['weight_labels'].cpu()
+    _, predicted_weight = output['weight'].cpu().max(1)
+    gt_weight = target['weight_labels'].cpu()
+    
+    _, predicted_color = output['color'].cpu().max(1)
+    gt_color = target['color_labels'].cpu()
 
     with warnings.catch_warnings():  # sklearn may produce a warning when processing zero row in confusion matrix
         warnings.simplefilter("ignore")
-        accuracy_breed = balanced_accuracy_score(y_true=gt_breed.numpy(), y_pred=predicted_breed.numpy())
-        accuracy_hair = balanced_accuracy_score(y_true=gt_hair.numpy(), y_pred=predicted_hair.numpy())
-        # loss_weight = balanced_accuracy_score(y_true=gt_weight.numpy(), y_pred=predicted_weight.numpy())
+        accuracy_breed = balanced_accuracy_score(y_true=gt_breed.detach().numpy(), y_pred=predicted_breed.detach().numpy())
+        accuracy_hair = balanced_accuracy_score(y_true=gt_hair.detach().numpy(), y_pred=predicted_hair.detach().numpy())
+        # loss_weight = balanced_accuracy_score(y_true=gt_weight.detach().numpy(), y_pred=predicted_weight.detach().numpy())
+        accuracy_color = balanced_accuracy_score(y_true=gt_color.detach().numpy(), y_pred=predicted_color.detach().numpy())
 
-    return accuracy_breed, accuracy_hair
+        # print(gt_weight)
+        #
+        # print(predicted_weight)
+
+        loss_weight = mean_squared_error(y_true=gt_weight.detach().numpy(),
+                                              y_pred=predicted_weight.detach().numpy())
+
+    return accuracy_breed, accuracy_hair, loss_weight, accuracy_color
 
 
 if __name__ == '__main__':

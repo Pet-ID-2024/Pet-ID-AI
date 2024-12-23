@@ -25,33 +25,21 @@ class MultiOutputModel(nn.Module):
 
         # create separate classifiers for our outputsco
         self.breed = nn.Sequential(
-            nn.Linear(in_features=last_channel, out_features=last_channel),
-            nn.BatchNorm1d(last_channel),
-            nn.ReLU(),
             nn.Dropout(0.5),
             nn.Linear(in_features=last_channel, out_features=n_breed_classes),
             # nn.Softmax(dim=1)
         )
         self.hair = nn.Sequential(
-            nn.Linear(in_features=last_channel, out_features=last_channel),
-            nn.BatchNorm1d(last_channel),
-            nn.ReLU(),
             nn.Dropout(0.5),
             nn.Linear(in_features=last_channel, out_features=n_hair_classes),
             # nn.Softmax(dim=1)
         )
         self.weight = nn.Sequential(
-            nn.Linear(in_features=last_channel, out_features=last_channel),
-            nn.BatchNorm1d(last_channel),
-            nn.ReLU(),
             nn.Dropout(0.5),
-            nn.Linear(in_features=last_channel, out_features=1),
+            nn.Linear(in_features=last_channel, out_features=1)
             # nn.Softmax(dim=1)
         )
         self.color = nn.Sequential(
-            nn.Linear(in_features=last_channel, out_features=last_channel),
-            nn.BatchNorm1d(last_channel),
-            nn.ReLU(),
             nn.Dropout(0.5),
             nn.Linear(in_features=last_channel, out_features=n_color_classes),
             # nn.Softmax(dim=1)
@@ -93,13 +81,16 @@ class MultiOutputModel(nn.Module):
     #     # print(loss)
     #     return loss.cpu(), {'breed': breed_loss, 'hair': hair_loss, 'weight' : weight_loss, 'color' : color_loss}, [breed_loss, hair_loss, weight_loss, color_loss]
 
+    def normalize(self, value, min_value, max_value):
+        return (value - min_value) / (max_value - min_value)
+
     def get_loss(self, net_output, ground_truth): # focal loss
         loss_fun = nn.MSELoss()
         focalloss_breed = FocalLoss()
         focalloss_hair = FocalLoss()
 
-        breed_loss = focalloss_breed(net_output['breed'], ground_truth['breed_labels'])
-        hair_loss = focalloss_hair(net_output['hair'], ground_truth['hair_labels'])
+        breed_loss = F.cross_entropy(net_output['breed'], ground_truth['breed_labels'])
+        hair_loss = F.cross_entropy(net_output['hair'], ground_truth['hair_labels'])
         weight_loss = loss_fun(net_output['weight'], ground_truth['weight_labels'])
         color_loss = F.cross_entropy(net_output['color'], ground_truth['color_labels'])
 
