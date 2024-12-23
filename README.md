@@ -1,6 +1,9 @@
 # Pet-ID
 
-반려견 견종, 털길이, 몸무게 Multi-Label Classification model
+version 1 class -> 품종 23개 종류, 털길이 2개(장모, 단모), 몸무게(숫자), 컬러 7개
+
+
+반려견 견종, 털길이, 몸무게, 컬러 Multi-Label Classification model
 
 모델 결과값 정리 - https://docs.google.com/spreadsheets/d/10T0Qatuifek33ecvgdPP2zkReyDR-7_GtcEvGVkF0pA/edit?usp=sharing
 
